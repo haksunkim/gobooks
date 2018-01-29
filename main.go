@@ -1,17 +1,31 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
-
-	"github.com/gorilla/mux"
+	"github.com/haksunkim/gobooks/web/controllers"
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/mvc"
 )
 
 func main() {
-	r := mux.NewRouter()
-	r.HandleFunc("/", HomeHandler)
-}
+	app := iris.New()
+	app.Logger().SetLevel("debug")
 
-func HomeHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Running web server")
+	// load the template files
+	app.RegisterView(iris.HTML("./web/views", ".html"))
+
+	app.StaticWeb("/static", "./web/assets")
+
+	// serve our controllers
+	mvc.New(app.Party("/")).Handle(new(controllers.MainController))
+
+	app.Run(
+		// start the web server at localhost:8080
+		iris.Addr("localhost:8080"),
+		// disable updates;
+		iris.WithoutVersionChecker,
+		// skip err server closed when CTRL/CMD+C pressed:
+		iris.WithoutServerError(iris.ErrServerClosed),
+		// enables faster json serialization and more:
+		iris.WithOptimizations,
+	)
 }
